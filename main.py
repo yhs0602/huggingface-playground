@@ -10,7 +10,7 @@ if __name__ == "__main__":
     # non-empty solutions and input_output features can be parsed from text format this way:
     sample["solutions"] = json.loads(sample["solutions"])
     sample["input_output"] = json.loads(sample["input_output"])
-    # print(sample)
+
     solutions = sample["solutions"]
     for solution in solutions:
         print("========Solution:==========")
