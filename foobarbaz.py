@@ -1,5 +1,8 @@
+import uuid
+
+
 def foo():
-    pass
+    return uuid.uuid4()
 
 
 class Bar:
