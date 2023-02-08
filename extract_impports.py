@@ -20,22 +20,25 @@ def get_imported_functions_and_calls2(file):
     defined_vars = set()
     for node in ast.walk(tree):
         if isinstance(node, ast.Import):
-            module = node.names[0].name
-            if module in sys.builtin_module_names:
-                imported_functions[module] = "built-in"
-            else:
-                imported_functions[module] = "external"
+            for alias in node.names:
+                module = alias.name
+                refer_name = alias.asname if alias.asname else alias.name
+                if module in sys.builtin_module_names:
+                    imported_functions[refer_name] = ("built-in", module)
+                else:
+                    imported_functions[refer_name] = ("external", module)
         elif isinstance(node, ast.ImportFrom):
             module = node.module
             for name in node.names:
                 if name.name == "*":
                     # import statement with wildcard, so we can't determine the imported functions
                     break
+                refer_name = name.asname if name.asname else name.name
                 if module in sys.builtin_module_names:
-                    imported_functions[f"{module}.{name.name}"] = "built-in"
+                    imported_functions[refer_name] = ("built-in", module)
                 else:
-                    # imported_functions[f"{module}.{name.name}"] = f"{module}"
-                    imported_functions[f"{name.name}"] = f"{module}"
+                    # imported_functions[f"{refer_name}.{name.name}"] = f"{module}"
+                    imported_functions[refer_name] = (module, module)
 
         elif isinstance(node, ast.Call):
             if isinstance(node.func, ast.Attribute):
@@ -73,27 +76,27 @@ def get_imported_functions_and_calls2(file):
 def process_one_file(file):
     print("Processing file: ", file)
     functions, calls = get_imported_functions_and_calls2(file)
-    # print(functions)
-    # print(calls)
-    # print("=========================================")
+    print(functions)
+    print(calls)
+    print("=========================================")
     usage_list = []
     for call in calls:
         if not call[1][1] == "imported":
             continue
         if call[1][0] == "external":
             first_part, other = call[0].split(".", maxsplit=1)
-            # print(f"from {first_part} use {other}")
+            print(f"from {first_part} use {other}")
             usage_list.append((first_part, other))
         else:
-            # print(f"from {call[1][0]} use {call[0]}")
+            print(f"from {call[1][0]} use {call[0]}")
             usage_list.append((call[1][0], call[0]))
     print(usage_list)
 
 
 if __name__ == "__main__":
-    file = "foo_to_flowchart.py"  # replace this with the name of your Python file
-    process_one_file(file)
-    process_one_file("test_import.py")
-    process_one_file("foobarbaz.py")
-    process_one_file("foo.py")
-    process_one_file("extract_impports.py")
+    # process_one_file("foo_to_flowchart.py")
+    # process_one_file("test_import.py")
+    # process_one_file("foobarbaz.py")
+    # process_one_file("foo.py")
+    # process_one_file("extract_impports.py")
+    process_one_file("panda_import_test.py")
