@@ -83,7 +83,11 @@ def process_one_file(file):
         if usage[0][0] == "external":
             print(f"from {usage[0][1]} use {usage[1]}")
         else:
-            print(f"from {usage[0][0]} use {usage[0][1]}.{usage[1]}")
+            module_parts = usage[0][0].split(".")
+            function_parts = f"{usage[0][1]}.{usage[1]}".split(".")
+            from_parts = ".".join(module_parts) + "." + ".".join(function_parts[:-1])
+            import_parts = function_parts[-1]
+            print(f"from {from_parts} use {import_parts}")
 
 
 if __name__ == "__main__":
