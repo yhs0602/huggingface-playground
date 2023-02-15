@@ -25,9 +25,9 @@ def get_imported_functions_and_calls2(file):
                 module = alias.name
                 refer_name = alias.asname if alias.asname else alias.name
                 if module in sys.builtin_module_names:
-                    imported_functions[refer_name] = ("built-in", module)
+                    imported_functions[refer_name] = ("built-in", module, alias.asname)
                 else:
-                    imported_functions[refer_name] = ("external", module)
+                    imported_functions[refer_name] = ("external", module, alias.asname)
         elif isinstance(node, ast.ImportFrom):
             module = node.module
             for name in node.names:
@@ -36,10 +36,10 @@ def get_imported_functions_and_calls2(file):
                     break
                 refer_name = name.asname if name.asname else name.name
                 if module in sys.builtin_module_names:
-                    imported_functions[refer_name] = ("built-in", module)
+                    imported_functions[refer_name] = ("built-in", module, name.asname)
                 else:
                     # imported_functions[f"{refer_name}.{name.name}"] = f"{module}"
-                    imported_functions[refer_name] = (module, refer_name)
+                    imported_functions[refer_name] = (module, refer_name, name.asname)
         elif isinstance(node, ast.Call):
             full_name = ""
             node = node.func
@@ -53,7 +53,7 @@ def get_imported_functions_and_calls2(file):
                 if module in imported_functions:
                     func_source = (imported_functions[module], "imported")
                 else:
-                    func_source = (module, "valriable")
+                    func_source = (module, "variable")
                 function_calls.append((full_name, func_source))
         elif isinstance(node, ast.FunctionDef):
             defined_vars.add(node.name)
@@ -69,25 +69,22 @@ def process_one_file(file):
     print("=========================================")
     usage_list = []
     for call in calls:
-        if not call[1][1] == "imported":
+        full_name, func_source = call
+        if not func_source[1] == "imported":
             continue
-        if call[1][0] == "external":
-            first_part, other = call[0].split(".", maxsplit=1)
-            # print(f"from {first_part} use {other}")
-            usage_list.append((first_part, other))
-        else:
-            # print(f"from {call[1][0]} use {call[0]}")
-            usage_list.append((call[1][0], call[0]))
+        imported_function_record = func_source[0]
+        usage_list.append((imported_function_record, full_name))
     print(usage_list)
     for usage in usage_list:
-        if usage[0][0] == "external":
-            print(f"from {usage[0][1]} use {usage[1]}")
+        real_import, actual_usage = usage
+        import_from, import_what, asname = real_import
+        as_str = f" as {asname}" if asname else ""
+        if import_from == "external":
+            print(f"import {import_what}{as_str} and use {actual_usage}")
         else:
-            module_parts = usage[0][0].split(".")
-            function_parts = f"{usage[0][1]}.{usage[1]}".split(".")
-            from_parts = ".".join(module_parts) + "." + ".".join(function_parts[:-1])
-            import_parts = function_parts[-1]
-            print(f"from {from_parts} use {import_parts}")
+            print(
+                f"import {import_what} from {import_from}{as_str} and use {actual_usage}"
+            )
 
 
 if __name__ == "__main__":
